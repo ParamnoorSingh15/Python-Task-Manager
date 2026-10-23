@@ -67,3 +67,46 @@ def create_task(task: TaskCreate):
 @app.get("/tasks")
 def get_tasks():
     return tasks
+
+
+# Update an existing task
+@app.put("/tasks/{task_id}")
+def update_task(task_id: int, updated_task: TaskCreate):
+    if not updated_task.title.strip():
+        raise HTTPException(
+            status_code=422,
+            detail="Task title cannot be empty or contain only spaces",
+        )
+
+    for task in tasks:
+        if task["id"] == task_id:
+            task["title"] = updated_task.title.strip()
+            task["description"] = updated_task.description
+            task["completed"] = updated_task.completed
+
+            return task
+
+    raise HTTPException(
+        status_code=404,
+        detail="Task not found",
+    )
+
+
+# Delete an existing task
+@app.delete("/tasks/{task_id}")
+def delete_task(task_id: int):
+    for index, task in enumerate(tasks):
+        if task["id"] == task_id:
+            deleted_task = tasks.pop(index)
+
+            return {
+                "message": "Task deleted successfully",
+                "task": deleted_task,
+            }
+
+    raise HTTPException(
+        status_code=404,
+        detail="Task not found",
+    )
+
+
