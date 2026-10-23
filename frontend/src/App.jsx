@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, Check, X } from "lucide-react";
 import "./App.css";
 
-const API = "http://127.0.0.1:8000";
+// Empty string = same origin. Works in Docker (FastAPI serves everything on :8000)
+// and in local dev when Vite proxies /tasks -> http://127.0.0.1:8000 (see vite.config.js)
+const API = "";
 
 const emptyForm = {
   title: "",
