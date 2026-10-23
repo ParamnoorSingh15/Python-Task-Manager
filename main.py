@@ -10,3 +10,7 @@ app = FastAPI(
 @app.get("/")
 def home():
     return {"message": "Welcome to the Task Manager API"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
