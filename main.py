@@ -1,5 +1,6 @@
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 app = FastAPI(
@@ -8,21 +9,24 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Temporary in-memory storage
+# Allow the React frontend to communicate with FastAPI
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Temporary in-memory task storage
 tasks = []
 next_task_id = 1
 
 
-# Model for creating and validating tasks
+# Task data validation
 class TaskCreate(BaseModel):
-    title: str = Field(
-        min_length=1,
-        max_length=100,
-    )
-    description: str = Field(
-        default="",
-        max_length=500,
-    )
+    title: str = Field(min_length=1, max_length=100)
+    description: str = Field(default="", max_length=500)
     completed: bool = False
 
 
@@ -32,18 +36,17 @@ def home():
     return {"message": "Welcome to the Task Manager API"}
 
 
-# Health-check endpoint
+# Health check
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
 
 
-# Create a new task
-@app.post("/tasks", status_code=status.HTTP_201_CREATED)
+# Create a task
+@app.post("/tasks", status_code=201)
 def create_task(task: TaskCreate):
     global next_task_id
 
-    # Reject titles containing only spaces
     if not task.title.strip():
         raise HTTPException(
             status_code=422,
@@ -69,7 +72,7 @@ def get_tasks():
     return tasks
 
 
-# Update an existing task
+# Update a task
 @app.put("/tasks/{task_id}")
 def update_task(task_id: int, updated_task: TaskCreate):
     if not updated_task.title.strip():
@@ -83,7 +86,6 @@ def update_task(task_id: int, updated_task: TaskCreate):
             task["title"] = updated_task.title.strip()
             task["description"] = updated_task.description
             task["completed"] = updated_task.completed
-
             return task
 
     raise HTTPException(
@@ -92,13 +94,12 @@ def update_task(task_id: int, updated_task: TaskCreate):
     )
 
 
-# Delete an existing task
+# Delete a task
 @app.delete("/tasks/{task_id}")
 def delete_task(task_id: int):
     for index, task in enumerate(tasks):
         if task["id"] == task_id:
             deleted_task = tasks.pop(index)
-
             return {
                 "message": "Task deleted successfully",
                 "task": deleted_task,
@@ -108,5 +109,3 @@ def delete_task(task_id: int):
         status_code=404,
         detail="Task not found",
     )
-
-
